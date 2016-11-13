@@ -1,0 +1,148 @@
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <string>
+#include<sstream>
+#include "User.h"
+using namespace std;
+
+struct Books {
+	string title;
+	int UserID;
+	int Rate;
+};
+
+
+template<class K, class T>
+void map_display(std::map<K, T> &m);
+
+template<class K, class T>
+void read_columns(std::map<K, T> &m, std::string fileName);
+
+std::map<int, std::map<long, int> > read_ratings();
+void show_ratings_map(std::map <int, std::map<long, int> > &m);
+
+void readIn(iostream& input);
+void readRating(iostream& input, map<int, User> userList);
+
+int main()
+{
+	std::map <long, std::string> book_list;
+	std::map <int, User > user_list;
+	std::map <int, std::map<long, int> > ratings;
+	read_columns(book_list, "books.txt");
+	read_columns(user_list, "customers.txt");
+	ratings = read_ratings();
+	map_display(book_list);
+	show_ratings_map(ratings);
+
+	int choice = 0;
+	while (!(choice >= 1 && choice <= 4)) 
+	{
+		cout << "1: Search for a book." << endl;
+		cout << "2. Rate a book." << endl;
+		cout << "3. Recommend a book." << endl;
+		cout << "4. Stop the program." << endl;
+		cin >> choice;
+		switch (choice) 
+		{
+			int ISBNSearched, ISBNrecommend;
+		case 1:
+			ISBNSearched = readBook(book_list);
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			break;
+
+		
+		
+		
+		}
+	
+	
+	}
+	
+
+
+
+	/*bool input1;
+	cout << "Please enter a book ISBN #";
+
+	cin >> book.title;
+	if (book.title == map <long, std::string> book_list) {
+		if (book.Rate == NULL) {
+			cout << "please rate the book";
+			cin >> book.Rate;
+		}
+		else
+			cout << book.Rate;
+		//show_ratings_map(std::map <int, std::map<long, int> > &m);
+	}
+	else {
+		cout << "would you like to rerate it??";
+		cin >> input1;
+		if (input1 == 1)
+			cin >> book.Rate; */
+
+		system("PAUSE");
+		return 0;
+	}
+
+template<class K, class T>
+void map_display(std::map <K, T> &m)
+{
+	for (typename std::map <K, T>::iterator it = m.begin(); it != m.end(); ++it)
+	{
+		std::cout << it->first << " --> " << it->second << "\n";
+	}
+}
+
+void show_ratings_map(std::map <int, std::map<long, int> > &m)
+{
+	for (std::map <int, std::map<long, int> >::iterator it = m.begin(); it != m.end(); ++it)
+	{
+		std::cout << it->first << " --> ";
+		map_display(it->second);
+		std::cout << "\n";
+	}
+}
+
+
+void readIn(iostream& input, map<int, User>& userList) {
+	while (input.good())
+	{
+
+		int key;
+		string name;
+		input >> key;
+		getline(input, name);
+		name = name.substr(2);
+		User temp(key, name);
+		userList[key] = temp;
+	}
+}
+
+void readRating(iostream& input, map<int, User> userList) {
+	while (input.good()) 
+	{
+		int num;
+		int isbn;
+		int rating;
+		userList[num].addBook(isbn, rating);
+	}
+}
+
+void readBook(iostream& input) 
+{
+	while (input.good()) 
+	{
+		int isbn;
+		int rating;
+		
+	}
+
+
+}
