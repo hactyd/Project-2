@@ -1,0 +1,276 @@
+/*
+Hamza Chaudhry, Niloofar Oliaei
+Dr. Mohammad Kuhail
+November 13, 2016
+Project 2B Open Project
+*/
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <string>
+#include<sstream>
+#include "User.h"
+#include "omp.h"
+using namespace std;
+
+void readIn(ifstream& input, map<int, User>& userList);
+void readRating(ifstream& input, map<int, User>& userList);
+void readBook(ifstream& input, map <long, string>& book_list);
+
+int main()
+{
+	ifstream bookIn, UserIn, ratingIn;
+	bookIn.open("books.txt");
+	UserIn.open("customers.txt");
+	ratingIn.open("ratings.txt");
+	map <long, string> book_list;
+	map <int, User > user_list;
+	map <int, simUser> simUser_map;
+	vector<long> rec;
+	readBook(bookIn, book_list);
+	readIn(UserIn, user_list);
+	readRating(ratingIn, user_list);
+	int choice = 0;
+	bool runit = true;
+	bool exists = false;
+	int ID;
+	while (runit)
+	{
+		cout << "Please enter your User ID:" << endl;
+		cin >> ID;
+		if (user_list.count(ID) == 0)
+		{
+			cout << "Please enter a valid user." << endl;
+			continue;
+		}
+		break;
+	}
+	
+			User *U = &user_list[ID];
+
+			while (!(choice >= 1 && choice <= 4))
+			{
+				cout << "1: Search for a book and probably rate it." << endl;
+				cout << "2. Rate a book." << endl;
+				cout << "3. Recommend a book." << endl;
+				cout << "4. Stop the program." << endl;
+				cin >> choice;
+
+				map<long, string>::iterator itr;
+				map<long, int>::iterator itr2;
+				map<int, simUser>::iterator simItr;
+				switch (choice)
+				{
+
+					long ISBNSearched;
+					int rating;
+					int  choice2;
+				case 1:
+					cout << "What book would you like to search? Please enter the ISBN:" << endl;
+					cin >> ISBNSearched;
+					if (book_list.find(ISBNSearched) != book_list.end())
+					{
+						cout << ISBNSearched << " " << book_list[ISBNSearched] << endl;
+					}
+					cout << "Would you like to rate it?" << endl;
+					cout << "Enter 1 for Yes or 2 for No:" << endl;
+					cin >> choice2;
+					if (choice2 == 1)
+					{
+						while (true)
+						{
+							cout << "Please enter a rating:" << endl;
+							cin >> rating;
+							if (rating < 1 || rating > 5)
+							{
+								cout << "Please enter a valid rating!" << endl;
+								continue;
+							}
+							break;
+						}
+
+						{
+							U->addBook(ISBNSearched, rating);
+							cout << "You rated " << book_list[ISBNSearched] << ": " << rating << endl;
+						}
+					}
+					else 
+					{
+						cout << "Thanks for using the program!" << endl << "Have a good day!" << endl;
+						break;
+
+					}
+					
+					break;
+				case 2:
+
+					cout << "List of Books you have not rated: \n" << endl;
+					omp_set_num_threads(3);
+#pragma omp parallel for
+
+					for (itr = book_list.begin(); itr != book_list.end(); itr++)
+					{
+						if (!U->findISBN(itr->first))
+						{
+							cout << "ISBN: " << itr->first << " Title: " << itr->second << endl;
+						}
+					}
+					while (true)
+					{
+						cout << "Please enter an ISBN you would like to rate:" << endl;
+						cin >> ISBNSearched;
+
+						if (book_list.count(ISBNSearched) == 0)
+						{
+							cout << "Please enter a valid book!" << endl;
+							continue;
+						}
+						else if(U->findISBN(ISBNSearched)) 
+						{
+							cout << "You have already rated this book." << endl;
+							continue;
+						}
+						break;
+					}
+
+
+					while (true) 
+					{
+						cout << "Please enter a rating:" << endl;
+						cin >> rating;
+						if (rating < 1 || rating > 5)
+						{
+							cout << "Please enter a valid rating!" << endl;
+							continue;
+						}
+						break;
+					}
+					
+					{
+						U->addBook(ISBNSearched, rating);
+						cout << "You rated " << book_list[ISBNSearched] << ": " << rating << endl;
+					}
+
+					break;
+				case 3:
+					omp_set_num_threads(3);
+#pragma omp parallel for
+					for (int i = 0; i < U->ISBN_vector.size(); i++) {
+						for (int x = 0; x < user_list.size(); x++) {
+							if (x != U->getID()) {
+								if (user_list[x].findISBN(U->ISBN_vector[i], U->ratings_map[U->ISBN_vector[i]])) {
+									if (simUser_map.empty()) {
+										User* tempUser = &user_list[x];
+										simUser temp(tempUser);
+										temp.similarISBN.push_back(U->ISBN_vector[i]);
+										simUser_map[x] = temp;
+									}
+									else {
+										if (simUser_map.find(x) == simUser_map.end()) {
+											simUser temp(&user_list[x]);
+											simUser_map[x] = temp;
+										}
+										else {
+											simUser_map[x].increment();
+										}
+									}
+								}
+							}
+						}
+					}
+					omp_set_num_threads(3);
+#pragma omp parallel for
+					for (simItr = simUser_map.begin(); simItr != simUser_map.end(); simItr++) {
+						for (itr2 = simItr->second.storedUser->ratings_map.begin(); itr2 != simItr->second.storedUser->ratings_map.end(); itr2++) {
+							for (int i = 0; i < simItr->second.storedUser->ISBN_vector.size(); i++)
+							{
+								ISBNSearched = simItr->second.storedUser->ISBN_vector[i];
+								if (simItr->second.storedUser->ratings_map[ISBNSearched] >= 4 && !U->findISBN(ISBNSearched))
+								{
+									for (int z = 0; z < rec.size(); z++) {
+										if (rec[z] == ISBNSearched) {
+											exists = true;
+											z = rec.size();
+										}
+									}
+									if (!exists) {
+										rec.push_back(ISBNSearched);
+										exists = false;
+									}
+								}
+							}
+
+						}
+					}
+					cout << "Here are a list of books recommended for you: \n" << endl;
+					for (int i = 0; i < rec.size(); i++) {
+						cout << rec[i] << " " << book_list[rec[i]] << endl;
+					}
+					system("pause");
+					break;
+				case 4:
+					break;
+
+
+
+
+				}
+
+
+			}
+
+
+		system("PAUSE");
+		return 0;
+	
+}
+
+//Reads in user file
+void readIn(ifstream& input, map<int, User>& userList) {
+	string header;
+	getline(input, header);
+	while (input.good())
+	{
+
+		int key;
+		string name;
+		input >> key;
+		getline(input, name);
+		name = name.substr(2);
+		User temp(key, name);
+		userList[key] = temp;
+	}
+}
+//reads in ratings
+void readRating(ifstream& input, map<int, User>& userList) {
+	string header;
+	getline(input, header);
+	while (input.good()) 
+	{
+		char ch;
+		int num;
+		long isbn;
+		int rating;
+		input >> num;
+		input >> ch;
+		input >> rating;
+		input >> ch;
+		input >> isbn;
+		userList[num].addBook(isbn, rating);
+	}
+}
+//reads in book
+void readBook(ifstream& input, map <long, string>& book_list)
+{
+	string header;
+	getline(input, header);
+	while (input.good()) 
+	{
+		long isbn;
+		string description;
+		input >> isbn;
+		getline(input, description);
+		description = description.substr(2);
+		book_list[isbn] = description;
+	}
+}
